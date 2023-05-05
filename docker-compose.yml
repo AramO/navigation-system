@@ -1,0 +1,45 @@
+version: '3.7'
+services:
+  navigation-database:
+    image: postgres:latest
+    restart: always
+    env_file:
+      - ./env/navigation-database.env
+    ports:
+      - '5432:5432'
+    volumes:
+      - navigation-database-postgresql-volume:/var/lib/postgresql
+    networks:
+      - navigation-network
+  navigation-service:
+    image: navigationservice
+    build: ./navigationservice
+    ports:
+      - '8081:8081'
+    env_file:
+      - ./env/navigation-database-reference.env
+    networks:
+      - navigation-network
+    depends_on:
+      - navigation-database
+  navigation-migrator:
+    image: navigation-migrator:latest
+    build: ./navigation-migrator
+    container_name: navigation-migrator
+    restart: "no"
+    env_file:
+      - ./env/navigation-database-reference.env
+    depends_on:
+      - navigation-database
+    networks:
+      - navigation-network
+
+volumes:
+  navigation-database-postgresql-volume:
+    name: "navigation-database-postgresql-volume"
+
+networks:
+  navigation-network:
+    driver: bridge
+    ipam:
+      driver: default
